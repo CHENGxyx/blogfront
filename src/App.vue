@@ -1,23 +1,18 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 </script>
-
 <template>
-  <header>
-    注册与登录
-  </header>
-
-    <div class="wrapper">
+  <header></header>
+  <div class="wrapper">
 
       <nav>
-        <RouterLink to="/">Login</RouterLink>
-        <RouterLink to="/Register">Register</RouterLink>
+        <RouterLink to="/"></RouterLink>
+        <RouterLink to="/Register"></RouterLink>
       </nav>
     </div>
 
   <RouterView />
 </template>
-
 <style scoped>
 header {
   font-size: 50px;
@@ -65,3 +60,4 @@ nav a {
   }
 }
 </style>
+
