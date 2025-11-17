@@ -104,7 +104,7 @@ const fetchArticleDetail = async () => {
       router.push('/home/' + (localStorage.getItem('username') || 'User'));
     }
   } catch (error: any) {
-    ElMessage.error('发生未知错误或请求失败!');
+    ElMessage.error('请求失败');
     router.push('/home/' + (localStorage.getItem('username') || 'User'));
   } finally {
     isLoading.value = false;
@@ -166,6 +166,7 @@ const editArticle = () => {
   box-sizing: border-box;
   background-color: skyblue;
   color: white;
+  border-radius: 10px;
 }
 
 .article-card {
