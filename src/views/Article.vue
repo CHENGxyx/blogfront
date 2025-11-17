@@ -2,12 +2,18 @@
   <div class="article-detail-container">
     <el-page-header @back="goBack" content="文章详情">
       <template #extra>
-        <el-button @click="editArticle" type="primary">编辑</el-button>
+        <div style="display: flex; gap: 10px;">
+          <el-button v-if="isAuthor" @click="editArticle" type="primary">编辑</el-button>
+          <el-button v-if="isAuthor" @click="deleteArticle" type="danger">删除</el-button>
+        </div>
       </template>
     </el-page-header>
     <el-card v-loading="isLoading" class="article-card">
       <h1 class="article-title">{{ article.title }}</h1>
       <div class="article-meta">
+        <span v-if="article.author && article.author.username" style="margin-right: 15px;">
+          <el-icon><User /></el-icon> 作者: {{ article.author.username }}
+        </span>
         <span><el-icon><Clock /></el-icon> 发布于: {{ article.formattedCreatedAt }}</span>
         <span v-if="article.formattedUpdatedAt && article.formattedUpdatedAt !== article.formattedCreatedAt" style="margin-left: 15px;">
           <el-icon><RefreshRight /></el-icon> 更新于: {{ article.formattedUpdatedAt }}
@@ -19,40 +25,47 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, defineProps } from 'vue';
+<script lang="ts" setup>
+import { ref, onMounted, computed } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import { ElMessage, ElCard, ElButton, ElPageHeader, ElDivider } from 'element-plus';
-import { Clock, RefreshRight } from '@element-plus/icons-vue';
 
-interface Props {
-  id: string;
+interface Author {
+  id: number;
+  username: string;
+  email: string;
 }
-const props = defineProps<Props>();
-
-const router = useRouter();
 
 interface ArticleDetail {
   id: number;
   title: string;
   content: string;
   user_id: number;
+  author: Author;
   created_at: string;
   updated_at: string;
   formattedCreatedAt?: string;
   formattedUpdatedAt?: string;
 }
 
+const props = defineProps<{
+  id: string;
+}>();
+
+const router = useRouter();
+
 const article = ref<ArticleDetail>({
-  id: parseInt(props.id),
-  title: '',
-  content: '',
-  user_id: 0,
-  created_at: '',
-  updated_at: '',
+  id: 0, title: '', content: '', user_id: 0,
+  author: { id: 0, username: '', email: '' },
+  created_at: '', updated_at: ''
 });
 const isLoading = ref(true);
+const currentLoggedInUserId = ref<number | null>(null);
+
+const isAuthor = computed(() => {
+  return currentLoggedInUserId.value !== null && article.value.user_id === currentLoggedInUserId.value;
+});
 
 const formatDate = (isoString: string | undefined): string => {
   if (!isoString) return '';
@@ -77,17 +90,7 @@ const formatDate = (isoString: string | undefined): string => {
 const fetchArticleDetail = async () => {
   isLoading.value = true;
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      ElMessage.error('未登录');
-      router.push('/');
-      return;
-    }
-    const response = await axios.get(`http://localhost:8080/api/articles/${props.id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    const response = await axios.get(`http://localhost:8080/api/articles/${props.id}`);
 
     if (response.data.code === 200 && response.data.data) {
       const data = response.data.data;
@@ -97,24 +100,52 @@ const fetchArticleDetail = async () => {
         formattedUpdatedAt: formatDate(data.updated_at),
       };
     } else {
-      ElMessage.error(response.data.message || '获取文章详情失败！');
-      router.push('/Home/' + (localStorage.getItem('username') || 'User'));
+      ElMessage.error(response.data.message || '获取文章详情失败!');
+      router.push('/home/' + (localStorage.getItem('username') || 'User'));
     }
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      ElMessage.error('发生未知错误！');
-    }
+    ElMessage.error('发生未知错误或请求失败!');
+    router.push('/home/' + (localStorage.getItem('username') || 'User'));
   } finally {
     isLoading.value = false;
+  }
+};
+
+const deleteArticle = async () => {
+  try {
+    await ElMessageBox.confirm('此操作将永久删除该文章, 是否继续?', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+
+    const response = await axios.delete(`http://localhost:8080/api/articles/${props.id}`);
+
+    if (response.data.code === 200) {
+      ElMessage.success('文章删除成功!');
+      router.push('/home/' + (localStorage.getItem('username') || 'User'));
+    } else {
+      ElMessage.error(response.data.message || '删除文章失败!');
+    }
+  } catch (error: any) {
+    if (error === 'cancel') {
+      ElMessage.info('已取消删除');
+    } else {
+      ElMessage.error('删除文章失败!');
+    }
   }
 };
 
 onMounted(() => {
   if (props.id) {
     fetchArticleDetail();
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+      currentLoggedInUserId.value = parseInt(storedUserId);
+    }
   } else {
     ElMessage.error('未获取到文章id');
-    router.push('/Home/' + (localStorage.getItem('username') || 'User'));
+    router.push('/home/' + (localStorage.getItem('username') || 'User'));
   }
 });
 
@@ -123,56 +154,81 @@ const goBack = () => {
 };
 
 const editArticle = () => {
-  router.push(`/Edit/${props.id}`);
+  router.push(`/edit/${props.id}`);
 };
 </script>
 
 <style scoped>
 .article-detail-container {
-  max-width: 960px;
-  margin: 20px auto;
+  width: 100%;
+  min-height: calc(100vh - var(--header-height, 0px) - var(--footer-height, 0px));
   padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  background-color: skyblue;
+  color: white;
 }
 
 .article-card {
-  margin-top: 20px;
+  margin: 20px auto;
+  background-color: white;
+  color: black;
+  border: 1px solid #555;
 }
 
 .article-title {
-  text-align: center;
   font-size: 2.5em;
-  color: #303133;
+  text-align: center;
   margin-bottom: 20px;
+  color: #5d9cec;
 }
 
 .article-meta {
-  text-align: center;
-  color: #909399;
-  font-size: 0.9em;
-  margin-bottom: 20px;
   display: flex;
   justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.article-meta span {
-  display: flex;
-  align-items: center;
+  font-size: 0.9em;
+  color: #bbb;
+  margin-bottom: 20px;
 }
 
 .article-meta .el-icon {
+  vertical-align: middle;
   margin-right: 5px;
 }
 
+.el-divider {
+  background-color: #555;
+}
+
 .article-content {
-  line-height: 1.8;
   font-size: 1.1em;
-  color: #606266;
-  white-space: pre-wrap;
+  line-height: 1.8;
+  padding: 0 15px;
   word-wrap: break-word;
+}
+
+.article-content :deep(p) {
+  margin-bottom: 1em;
+}
+
+.article-content :deep(h1),
+.article-content :deep(h2),
+.article-content :deep(h3) {
+  margin-top: 1.5em;
+  margin-bottom: 0.8em;
+  color: #a0cfff;
+}
+
+.el-page-header {
+  margin-bottom: 20px;
+  color: white;
+}
+
+.el-page-header :deep(.el-page-header__content),
+.el-page-header :deep(.el-page-header__back .el-page-header__icon) {
+  color: white;
+}
+
+.el-page-header :deep(.el-page-header__title) {
+  color: #5d9cec;
 }
 </style>

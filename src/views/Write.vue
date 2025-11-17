@@ -37,7 +37,7 @@ const submit = async () => {
   const token = localStorage.getItem('token');
   if (!token) {
     ElMessage.error('您尚未登录或认证已过期，请先登录！');
-    router.push('/login');
+    router.push('/');
     return;
   }
 
@@ -64,7 +64,7 @@ const submit = async () => {
       ElMessage.success('文章发布成功!');
       title.value = '';
       textarea.value = '';
-      router.push(`/Home/${localStorage.getItem('username') || 'User'}`);
+      router.push(`/article/${response.data.data.id}`);
     } else {
       ElMessage.error(response.data.message || '文章发布失败!');
     }

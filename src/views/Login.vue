@@ -1,18 +1,21 @@
 <template>
-  <header>
-    注册与登录
-  </header>
+  <el-card style="max-width: 480px;" class="main">
+  <template #header>
+    <header style="color: #0080ff">
+      注册与登录
+    </header>
+  </template>  
   <div class="wrapper">
 
       <nav>
         <RouterLink to="/">Login</RouterLink>
-        <RouterLink to="/Register">Register</RouterLink>
+        <RouterLink to="/register">Register</RouterLink>
       </nav>
     </div>
 
   <RouterView />
   <div class="input-username">
-    <h3>账号</h3>
+    <h3 style="color: skyblue;">账号</h3>
     <el-input
       v-model="username"
       style="width: 240px"
@@ -21,7 +24,7 @@
     />
   </div>
   <div class="input-password">
-    <h3>密码</h3>
+    <h3 style="color: skyblue;">密码</h3>
   <el-input
     v-model="password"
     style="width: 240px"
@@ -30,9 +33,12 @@
     show-password
   />
   </div>
+  <template #footer>
   <div class="submit">
     <el-button type="Login" @click="handleLogin">Login</el-button>
   </div>
+  </template>
+  </el-card>
 </template>
 
 <script lang="ts" setup>
@@ -56,7 +62,7 @@ const response = await axios.post(
       const loggedInUsername = response.data.data.user.username;
       localStorage.setItem('userId', response.data.data.user.id.toString());
       localStorage.setItem('token', response.data.data.token);
-      router.push({ name:'Home', params: { username: loggedInUsername } });
+      router.push({ name:'home', params: { username: loggedInUsername } });
     }
   }
   catch (error) {
@@ -93,7 +99,19 @@ nav a {
   border-left: 1px solid var(--color-border);
 }
 
+.main {
+  --el-card-bg-color: white;
+  border: 5px solid #66CCFF;
+  border-radius: 10px;
+}
 
+.main :deep(.el-card__header){
+  border-bottom:3px solid #66CCFF;
+}
+
+.main :deep(.el-card__footer){
+  border-top:3px solid #66CCFF;
+}
 
 @media (min-width: 1024px) {
   header {
@@ -108,7 +126,7 @@ nav a {
     font-size: 1rem;
 
     padding: 1rem 0;
-    margin-top: 1rem;
+    margin-top: 1px;
   }
 }
 .submit {
