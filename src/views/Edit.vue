@@ -8,13 +8,11 @@
     </div>
     <div id="content">
     <b class="text">文章内容</b><br>
-    <el-input
+    <v-md-editor
     v-model="textarea"
-    style="width: 500px"
-    :rows="20"
-    type="textarea"
-    placeholder="Please input your content"
-    />
+    height="500px"
+    placeholder="Please input your content">
+    </v-md-editor>
     </div>
     <el-button type="primary" @click="onSubmit">保存</el-button>
   </div>
@@ -25,6 +23,8 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import VMdEditor from '@kangc/v-md-editor';
+import '@kangc/v-md-editor/lib/style/base-editor.css';
 const props = defineProps({
   id: {
     type: Number,

@@ -30,6 +30,8 @@ import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import VMdPreview from '@kangc/v-md-editor/lib/preview';
+import '@kangc/v-md-editor/lib/style/preview.css';
 
 interface Author {
   id: number;
@@ -66,7 +68,6 @@ const currentLoggedInUserId = ref<number | null>(null);
 const isAuthor = computed(() => {
   return currentLoggedInUserId.value !== null && article.value.user_id === currentLoggedInUserId.value;
 });
-
 const formatDate = (isoString: string | undefined): string => {
   if (!isoString) return '';
   try {
